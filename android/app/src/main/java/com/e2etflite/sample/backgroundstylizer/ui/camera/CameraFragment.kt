@@ -128,7 +128,7 @@ class CameraFragment : Fragment() {
                 camera = cameraProvider.bindToLifecycle(
                     this, cameraSelector, preview, imageCapture
                 )
-                preview?.setSurfaceProvider(viewFinder.createSurfaceProvider(camera?.cameraInfo))
+                preview?.setSurfaceProvider(viewFinder.surfaceProvider)
             } catch (exc: Exception) {
                 Log.e(TAG, "Use case binding failed", exc)
             }
@@ -153,7 +153,7 @@ class CameraFragment : Fragment() {
 
         imageCapture.takePicture(
             outputOptions,
-            ContextCompat.getMainExecutor(context),
+            ContextCompat.getMainExecutor(requireContext()),
             object : ImageCapture.OnImageSavedCallback {
                 override fun onError(exc: ImageCaptureException) {
                     Log.e(TAG, "Photo capture failed: ${exc.message}", exc)

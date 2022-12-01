@@ -17,7 +17,7 @@
             android:id="@+id/viewFinder"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            app:scaleType="centerCrop" />
+            app:scaleType="fitCenter" />
 
         <!-- Camera control and gallery buttons -->
         <ImageButton

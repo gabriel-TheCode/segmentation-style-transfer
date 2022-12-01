@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.e2etflite.sample.backgroundstylizer">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <!-- Make sure there is at least one camera -->
     <uses-feature android:name="android.hardware.camera.any" />
@@ -17,7 +16,8 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name="com.e2etflite.sample.backgroundstylizer.MainActivity">
+        <activity android:name="com.e2etflite.sample.backgroundstylizer.MainActivity"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

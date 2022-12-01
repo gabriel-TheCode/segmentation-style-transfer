@@ -157,20 +157,20 @@ class SegmentationAndStyleTransferFragment : Fragment(),
 
         // Observe style transfer procedure
         viewModel.inferenceDone.observe(
-                requireActivity(),
-                Observer { loadingDone ->
-                    when (loadingDone) {
-                        true -> binding.progressbarStyle.visibility = View.GONE
-                    }
-                }
-        )
+                requireActivity()
+        ) { loadingDone ->
+            when (loadingDone) {
+
+                true -> binding.progressbarStyle.visibility = View.GONE
+                else -> binding.progressbarStyle.visibility = View.VISIBLE
+            }
+        }
 
         viewModel.totalTimeInference.observe(
-                requireActivity(),
-                Observer { time ->
-                    //binding.inferenceInfoStyle.text = "Total process time: ${time}ms"
-                }
-        )
+                requireActivity()
+        ) { time ->
+            //binding.inferenceInfoStyle.text = "Total process time: ${time}ms"
+        }
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {

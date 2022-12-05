@@ -19,6 +19,7 @@ import org.tensorflow.lite.task.vision.segmenter.OutputType
 import org.tensorflow.lite.task.vision.segmenter.Segmentation
 import java.io.IOException
 
+
 class SegmentationAndStyleTransferViewModel(application: Application) :
         AndroidViewModel(application),
         KoinComponent {
@@ -48,7 +49,7 @@ class SegmentationAndStyleTransferViewModel(application: Application) :
     val inferenceDone: LiveData<Boolean>
         get() = _inferenceDone
 
-    val styleTransferModelExecutor: StyleTransferModelExecutor
+    private val styleTransferModelExecutor: StyleTransferModelExecutor
 
     init {
 
@@ -134,7 +135,7 @@ class SegmentationAndStyleTransferViewModel(application: Application) :
                 }
             }
             scaledMaskBitmap =
-                    Bitmap.createScaledBitmap(output, bitmap.getWidth(), bitmap.getHeight(), true)
+                    Bitmap.createScaledBitmap(output, bitmap.width, bitmap.height, true)
             inferenceTime = SystemClock.uptimeMillis() - startTime
         } catch (e: IOException) {
             Log.e("ImageSegmenter", "Error: ", e)
@@ -151,8 +152,8 @@ class SegmentationAndStyleTransferViewModel(application: Application) :
         }
         Log.i("ORIGINAL_WIDTH", original.width.toString())
         Log.i("ORIGINAL_HEIGHT", original.height.toString())
-        Log.i("MASK_WIDTH", original.width.toString())
-        Log.i("MASK_HEIGHT", original.height.toString())
+        Log.i("MASK_WIDTH", mask.width.toString())
+        Log.i("MASK_HEIGHT", mask.height.toString())
         val w = original.width
         val h = original.height
         if (w <= 0 || h <= 0) {
@@ -164,6 +165,34 @@ class SegmentationAndStyleTransferViewModel(application: Application) :
         val canvas = Canvas(cropped)
         val paint = Paint(Paint.ANTI_ALIAS_FLAG)
         paint.xfermode = PorterDuffXfermode(PorterDuff.Mode.DST_IN)
+        canvas.drawBitmap(original, 0f, 0f, null)
+        canvas.drawBitmap(mask, 0f, 0f, paint)
+        paint.xfermode = null
+
+        return cropped
+    }
+
+    fun cropBitmapWithMaskOver(original: Bitmap, mask: Bitmap?): Bitmap? {
+        if (mask == null
+        ) {
+            return null
+        }
+        Log.i("ORIGINAL_WIDTH", original.width.toString())
+        Log.i("ORIGINAL_HEIGHT", original.height.toString())
+        Log.i("MASK_WIDTH", mask.width.toString())
+        Log.i("MASK_HEIGHT", mask.height.toString())
+        val w = original.width
+        val h = original.height
+        if (w <= 0 || h <= 0) {
+            return null
+        }
+        val cropped: Bitmap = Bitmap.createScaledBitmap(original, mask.width, mask.height, false)
+        O
+        Log.i("CROPPED_WIDTH", cropped.width.toString())
+        Log.i("CROPPED_HEIGHT", cropped.height.toString())
+        val canvas = Canvas(cropped)
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+        paint.xfermode = PorterDuffXfermode(PorterDuff.Mode.SRC_OVER)
         canvas.drawBitmap(original, 0f, 0f, null)
         canvas.drawBitmap(mask, 0f, 0f, paint)
         paint.xfermode = null

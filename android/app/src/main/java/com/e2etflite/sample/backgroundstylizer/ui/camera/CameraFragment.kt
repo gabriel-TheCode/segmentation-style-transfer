@@ -2,9 +2,7 @@ package com.e2etflite.sample.backgroundstylizer.ui.camera
 
 import android.app.Activity.RESULT_OK
 import android.content.Intent
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.graphics.Matrix
+import android.graphics.*
 import android.media.ExifInterface
 import android.net.Uri
 import android.os.Bundle
@@ -17,6 +15,7 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.ImageView
 import androidx.camera.core.*
+import androidx.camera.core.Camera
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
@@ -101,7 +100,7 @@ class CameraFragment : Fragment() {
         val screenAspectRatio = 1.0 / 1.0
         Log.d(TAG, "Preview aspect ratio: $screenAspectRatio")
 
-        cameraProviderFuture.addListener(Runnable {
+        cameraProviderFuture.addListener({
             // Used to bind the lifecycle of cameras to the lifecycle owner
             val cameraProvider: ProcessCameraProvider = cameraProviderFuture.get()
 
@@ -206,12 +205,9 @@ class CameraFragment : Fragment() {
      * Get rotation degree from image exif
      */
     private fun rotationDegrees(file: File): Int {
-        val ei = ExifInterface(file.absolutePath);
-        val orientation =
-            ei.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
-
+        val ei = ExifInterface(file.absolutePath)
         // Return rotation degree based on orientation from exif
-        return when (orientation) {
+        return when (ei.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)) {
             ExifInterface.ORIENTATION_ROTATE_90 -> 90
             ExifInterface.ORIENTATION_ROTATE_180 -> 180
             ExifInterface.ORIENTATION_ROTATE_270 -> 270

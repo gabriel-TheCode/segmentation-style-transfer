@@ -1,21 +1,27 @@
 package com.e2etflite.sample.backgroundstylizer.ui.segmentation
 
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
+import android.app.Activity
+import android.content.Intent
+import android.graphics.*
+import android.net.Uri
 import android.os.Bundle
 import android.view.*
 import android.widget.ImageView
 import android.widget.Toast
 import androidx.core.net.toUri
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.Observer
+import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
 import com.e2etflite.sample.backgroundstylizer.MainActivity
 import com.e2etflite.sample.backgroundstylizer.R
 import com.e2etflite.sample.backgroundstylizer.databinding.FragmentSelfie2segmentationBinding
+import com.e2etflite.sample.backgroundstylizer.ui.camera.CameraFragment
+import com.e2etflite.sample.backgroundstylizer.ui.camera.CameraFragmentDirections
 import com.e2etflite.sample.backgroundstylizer.ui.style.StyleFragment
 import com.e2etflite.sample.backgroundstylizer.utils.ImageUtils
 import kotlinx.android.synthetic.main.fragment_selfie2segmentation.*
@@ -51,6 +57,7 @@ class SegmentationAndStyleTransferFragment : Fragment(),
     // DataBinding
     private lateinit var binding: FragmentSelfie2segmentationBinding
     private lateinit var photoFile: File
+    private lateinit var backgroundPhotoFile: File
 
     // RecyclerView
     private lateinit var mSearchFragmentNavigationAdapter: SearchFragmentNavigationAdapter
@@ -60,6 +67,7 @@ class SegmentationAndStyleTransferFragment : Fragment(),
 
     private lateinit var scaledBitmap: Bitmap
     private lateinit var selfieBitmap: Bitmap
+    private lateinit var backgroundBitmap: Bitmap
     private var outputBitmapFinal: Bitmap? = null
     private var inferenceTime: Long = 0L
     private val stylesFragment: StyleFragment = StyleFragment()
@@ -125,35 +133,71 @@ class SegmentationAndStyleTransferFragment : Fragment(),
             binding.imageviewOutput.visibility = View.VISIBLE
         }
 
+        binding.frameOutputBackground.setOnClickListener {
+            val intent = Intent()
+            intent.type = "image/*"
+            intent.action = Intent.ACTION_GET_CONTENT
+            startActivityForResult(
+                Intent.createChooser(intent, "Select Picture"),
+                PICK_BACKGROUND_IMAGE_REQUEST
+            )
+        }
+
         return binding.root
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        if (requestCode == PICK_BACKGROUND_IMAGE_REQUEST && resultCode == Activity.RESULT_OK && data != null && data.data != null) {
+
+            val filePath: Uri? = data.data
+            if (filePath != null) {
+                Toast.makeText(requireContext(), filePath.path, Toast.LENGTH_SHORT).show()
+                backgroundBitmap =
+                    BitmapFactory.decodeStream(
+                        requireActivity().contentResolver.openInputStream(
+                            filePath.toString().toUri()
+                        )
+                    )
+
+                val styledBitmap = viewModel.cropBitmapWithMaskOver(backgroundBitmap, outputBitmapFinal)
+
+                Glide.with(imageview_background.context)
+                    .load(styledBitmap)
+                    .fitCenter()
+                    .into(imageview_background)
+
+
+            }
+        }
     }
 
     private fun observeViewModel() {
 
         viewModel.styledBitmap.observe(
-                requireActivity(),
-                Observer { resultImage ->
-                    if (resultImage != null) {
-                        /*Glide.with(activity!!)
-                            .load(resultImage.styledImage)
-                            .fitCenter()
-                            .into(binding.imageViewStyled)*/
+                requireActivity()
+        ) { resultImage ->
+            if (resultImage != null) {
+                /*Glide.with(activity!!)
+                    .load(resultImage.styledImage)
+                    .fitCenter()
+                    .into(binding.imageViewStyled)*/
 
-                        // Set this to use with save function
-                        finalBitmapWithStyle = viewModel.cropBitmapWithMaskForStyle(
-                                resultImage.styledImage,
-                                outputBitmapFinal
-                        )
+                // Set this to use with save function
+                finalBitmapWithStyle = viewModel.cropBitmapWithMaskForStyle(
+                    resultImage.styledImage,
+                    outputBitmapFinal
+                )
 
-                        binding.imageviewStyled.setImageBitmap(
-                                viewModel.cropBitmapWithMaskForStyle(
-                                        resultImage.styledImage,
-                                        outputBitmapFinal
-                                )
-                        )//selfieBitmap
-                    }
-                }
-        )
+                binding.imageviewStyled.setImageBitmap(
+                    viewModel.cropBitmapWithMaskForStyle(
+                        resultImage.styledImage,
+                        outputBitmapFinal
+                    )
+                )//selfieBitmap
+            }
+        }
 
         // Observe style transfer procedure
         viewModel.inferenceDone.observe(
@@ -169,7 +213,7 @@ class SegmentationAndStyleTransferFragment : Fragment(),
         viewModel.totalTimeInference.observe(
                 requireActivity()
         ) { time ->
-            //binding.inferenceInfoStyle.text = "Total process time: ${time}ms"
+            binding.inferenceInfoStyle.text = "Total process time: ${time}ms"
         }
     }
 
@@ -178,10 +222,10 @@ class SegmentationAndStyleTransferFragment : Fragment(),
         if (filePath.startsWith("/storage")) {
             photoFile = File(filePath)
 
-            /*Glide.with(imageview_input.context)
+            Glide.with(imageview_input.context)
                     .load(photoFile)
                     .fitCenter()
-                    .into(imageview_input)*/
+                    .into(imageview_input)
 
             // Make input ImageView visible
             binding.imageviewInput.visibility = View.VISIBLE
@@ -206,7 +250,6 @@ class SegmentationAndStyleTransferFragment : Fragment(),
                 }
             }
         } else {
-
             selfieBitmap =
                     BitmapFactory.decodeStream(
                             requireActivity().contentResolver.openInputStream(
@@ -256,6 +299,7 @@ class SegmentationAndStyleTransferFragment : Fragment(),
         //showStyledImage("mona.JPG")
     }
 
+
     private fun showStyledImage(style: String) {
         lifecycleScope.launch(Dispatchers.Default) {
 
@@ -304,6 +348,7 @@ class SegmentationAndStyleTransferFragment : Fragment(),
         private const val FILENAME_FORMAT = "yyyy-MM-dd-HH-mm-ss-SSS"
         const val MODEL_WIDTH = 256
         const val MODEL_HEIGHT = 256
+        private const val PICK_BACKGROUND_IMAGE_REQUEST = 1025
     }
 
     override fun onListItemClick(itemIndex: Int, sharedImage: ImageView?, type: String) {
@@ -343,4 +388,5 @@ class SegmentationAndStyleTransferFragment : Fragment(),
         getKoin().setProperty(getString(R.string.koinStyle), item)
         viewModel.setStyleName(item)
     }
+
 }

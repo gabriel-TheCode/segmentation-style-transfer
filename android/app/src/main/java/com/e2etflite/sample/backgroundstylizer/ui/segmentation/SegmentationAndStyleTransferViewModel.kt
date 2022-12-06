@@ -18,6 +18,7 @@ import org.tensorflow.lite.task.vision.segmenter.ImageSegmenter
 import org.tensorflow.lite.task.vision.segmenter.OutputType
 import org.tensorflow.lite.task.vision.segmenter.Segmentation
 import java.io.IOException
+import kotlin.math.roundToInt
 
 
 class SegmentationAndStyleTransferViewModel(application: Application) :
@@ -186,15 +187,25 @@ class SegmentationAndStyleTransferViewModel(application: Application) :
         if (w <= 0 || h <= 0) {
             return null
         }
-        val cropped: Bitmap = Bitmap.createScaledBitmap(original, mask.width, mask.height, false)
-        O
+        val cropped: Bitmap = Bitmap.createScaledBitmap(mask, original.width, original.height, false)
         Log.i("CROPPED_WIDTH", cropped.width.toString())
         Log.i("CROPPED_HEIGHT", cropped.height.toString())
+
+        val aspectRatio: Float = mask.width /
+                mask.height.toFloat()
+        val width = original.width
+        val height = (width / aspectRatio).roundToInt()
+
+        val scaledBitmap = Bitmap.createScaledBitmap(
+            mask, width, height, false
+        )
         val canvas = Canvas(cropped)
         val paint = Paint(Paint.ANTI_ALIAS_FLAG)
         paint.xfermode = PorterDuffXfermode(PorterDuff.Mode.SRC_OVER)
         canvas.drawBitmap(original, 0f, 0f, null)
-        canvas.drawBitmap(mask, 0f, 0f, paint)
+        canvas.drawBitmap(scaledBitmap, 0f, 0f, paint)
+        canvas.translate(0f, canvas.height.toFloat())   // reset where 0,0 is located
+        canvas.scale(1f,-1f);
         paint.xfermode = null
 
         return cropped

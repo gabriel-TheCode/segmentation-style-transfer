@@ -167,8 +167,6 @@ class SegmentationAndStyleTransferFragment : Fragment(),
                     .load(styledBitmap)
                     .fitCenter()
                     .into(imageview_background)
-
-
             }
         }
     }
